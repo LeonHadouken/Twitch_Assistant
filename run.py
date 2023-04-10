@@ -20,19 +20,15 @@ def speech_trans():
         # записываем аудио с микрофона
         audio = r.listen(source)
         # распознаем речь с помощью Google Speech Recognition
-        try:
-            text = r.recognize_google(audio, language='ru-RU')
+        response = r.recognize_google(audio, language='ru-RU', show_all=True)
+        if 'alternative' in response:
+            text = response['alternative'][0]['transcript']
             # переводим текст с помощью библиотеки translate
             translator = Translator(to_lang="en", from_lang="ru")
             translation = translator.translate(text)
-            # print(f"Вы сказали: {text}")
-            print(f"Перевод на английский: {translation}")
-        except sr.UnknownValueError:
+            print(translation)
+        else:
             print("Речь не распознана")
-        except sr.RequestError as e:
-            print("Ошибка сервиса распознавания речи: ", e)
 
 while True:
     speech_trans()
-
-

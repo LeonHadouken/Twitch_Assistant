@@ -3,60 +3,46 @@ import speech_recognition as sr
 from translate import Translator
 
 
-class TranslatorGUI:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Голосовой переводчик")
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.init_ui()
 
-        # создаем список доступных аудиоустройств
-        self.devices = sr.Microphone.list_microphone_names()
-        self.selected_device = tk.StringVar(value=self.devices[0])
+    def init_ui(self):
+        # создаем текстовое поле
+        self.text = tk.Text(self.root, height=10, width=50)
+        self.text.pack()
 
-        # добавляем выпадающий список для выбора аудиоустройства
-        device_label = tk.Label(self.root, text="Выберите аудиоустройство")
-        device_label.pack()
-        device_dropdown = tk.OptionMenu(self.root, self.selected_device, *self.devices)
-        device_dropdown.pack()
+        # создаем кнопку и связываем ее с функцией
+        self.button = tk.Button(self.root, text="Нажми меня!", command=self.speech_trans)
+        self.button.pack(pady=10)
 
-        # добавляем кнопку запуска записи
-        record_button = tk.Button(self.root, text="Распознать и перевести", command=self.record)
-        record_button.pack()
-
-        # добавляем текстовую область для отображения перевода
-        self.translation_text = tk.Text(self.root)
-        self.translation_text.pack()
-
-    def record(self):
-        # получаем индекс выбранного аудиоустройства
-        device_index = self.devices.index(self.selected_device.get())
-
-        # создаем объект Recognizer, чтобы он использовал выбранное устройство
-        r = sr.Recognizer()
-
-        with sr.Microphone(device_index=device_index) as source:
+    def speech_trans(self):
+        with sr.Microphone() as source:
             # настраиваем параметры распознавания
+            r = sr.Recognizer()
             r.adjust_for_ambient_noise(source)
-            self.translation_text.delete("1.0", tk.END)
-            self.translation_text.insert("1.0", "Скажите что-нибудь...\n")
+            print("Скажите что-нибудь...")
+
             # записываем аудио с микрофона
             audio = r.listen(source)
+
             # распознаем речь с помощью Google Speech Recognition
             try:
                 text = r.recognize_google(audio, language='ru-RU')
                 # переводим текст с помощью библиотеки translate
                 translator = Translator(to_lang="en", from_lang="ru")
                 translation = translator.translate(text)
-                self.translation_text.insert(tk.END, f"Вы сказали: {text}\n")
-                self.translation_text.insert(tk.END, f"Перевод: {translation.text}\n")
+                self.text.delete(1.0, tk.END)  # очищаем текстовое поле
+                self.text.insert(tk.END, f"Вы сказали: {text}\nПеревод на английский: {translation}")
             except sr.UnknownValueError:
-                self.translation_text.insert(tk.END, "Речь не распознана\n")
+                self.text.delete(1.0, tk.END)
+                self.text.insert(tk.END, "Речь не распознана")
             except sr.RequestError as e:
-                self.translation_text.insert(tk.END, f"Ошибка сервиса распознавания речи: {e}\n")
-
-    def run(self):
-        self.root.mainloop()
+                self.text.delete(1.0, tk.END)
+                self.text.insert(tk.END, f"Ошибка сервиса распознавания речи: {e}")
 
 
-if __name__ == '__main__':
-    app = TranslatorGUI()
-    app.run()
+root = tk.Tk()
+app = App(root)
+root.mainloop()
